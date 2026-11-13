@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Relatório de vendas • 17 a 21/11/2024</title>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#f4f6f8;--surface:#fff;--ink:#14213d;--muted:#5b6678;--line:#dde2e9;--accent:#0f766e;--accent-ink:#fff;--warn:#b45309}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e141c;--surface:#17202c;--ink:#e8edf4;--muted:#9aa7b8;--line:#2a3646;--accent:#2dd4bf;--accent-ink:#06201d;--warn:#fbbf24}}
+:root[data-theme="dark"]{--bg:#0e141c;--surface:#17202c;--ink:#e8edf4;--muted:#9aa7b8;--line:#2a3646;--accent:#2dd4bf;--accent-ink:#06201d;--warn:#fbbf24}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "Public Sans",system-ui,sans-serif}
+main{max-width:1040px;margin:0 auto;padding:24px 16px 48px}
+h1{font-size:clamp(26px,5vw,38px);line-height:1.1;margin:0 0 6px;font-weight:800;letter-spacing:-.02em}
+.sub{color:var(--muted);margin:0 0 20px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.kpi span{display:block;color:var(--muted);font-size:13px}
+.kpi b{font-size:24px;font-weight:800}
+.kpi.main{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.kpi.main span{color:inherit;opacity:.85}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:16px}
+.controls{display:flex;flex-wrap:wrap;gap:14px 20px;align-items:end;margin-bottom:14px}
+.controls label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
+select{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px 10px;min-width:150px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg button{font:inherit;font-size:13px;background:var(--bg);color:var(--ink);border:0;padding:7px 12px;cursor:pointer}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);font-weight:600}
+button:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.chartbox{position:relative;height:340px}
+.hint{color:var(--muted);font-size:13px;margin:8px 0 0}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px;min-width:620px}
+th,td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+th{color:var(--muted);font-weight:600;font-size:13px}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+tfoot td{font-weight:800;border-bottom:0}
+h2{font-size:18px;margin:0 0 10px}
+ul{margin:0;padding-left:18px}li{margin-bottom:6px}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;align-items:end}
+.fgrid label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
+.fgrid select,.fgrid input{width:100%;min-width:0;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px 10px}
+.fgrid input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.fbar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-top:14px}
+.btn{font:inherit;font-weight:600;background:var(--accent);color:var(--accent-ink);border:0;border-radius:6px;padding:9px 18px;cursor:pointer}
+.ftot{font-weight:800}
+.msg{color:var(--accent);font-size:13px}
+.del{font:inherit;font-size:12px;background:none;color:var(--warn);border:1px solid var(--line);border-radius:6px;padding:2px 8px;cursor:pointer}
+</style>
+</head>
+<body>
+<main>
+<h1>Relatório de vendas</h1>
+<p class="sub">Pedidos 1001 a 1029, de 17 a 21/11/2024. Total do pedido = quantidade × (valor unitário + frete).</p>
+
+<section class="kpis" id="kpis"></section>
+
+<section class="panel">
+<div class="controls">
+<label>Região<select id="fReg"></select></label>
+<label>Produto<select id="fProd"></select></label>
+<label>Agrupar por<span class="seg" id="gGroup" role="group" aria-label="Agrupar por"></span></label>
+<label>Métrica<span class="seg" id="gMet" role="group" aria-label="Métrica"></span></label>
+<label>Gráfico<span class="seg" id="gType" role="group" aria-label="Tipo de gráfico"></span></label>
+</div>
+<div class="chartbox"><canvas id="chart" role="img" aria-label="Gráfico de vendas"></canvas></div>
+<p class="hint" id="hint">Clique em uma barra, fatia ou ponto para filtrar a tabela abaixo.</p>
+</section>
+
+<section class="panel">
+<h2>Adicionar venda</h2>
+<form id="nForm">
+<div class="fgrid">
+<label>Região<select id="nReg" required></select></label>
+<label>Estado (UF)<input id="nUf" maxlength="2" placeholder="SP" required style="text-transform:uppercase"></label>
+<label>Produto<input id="nProd" list="prodList" placeholder="Escolha ou digite" required><datalist id="prodList"></datalist></label>
+<label>Data<input id="nData" type="date" value="2024-11-21" required></label>
+<label>Quantidade<input id="nQtd" type="number" min="1" step="1" value="1" required></label>
+<label>Valor unitário (R$)<input id="nVu" type="number" min="0" step="0.01" required></label>
+<label>Frete (R$)<input id="nFr" type="number" min="0" step="0.01" required></label>
+</div>
+<div class="fbar"><button class="btn" type="submit">Adicionar venda</button><span class="ftot" id="nTot">Total: R$ 0,00</span><span class="msg" id="nMsg" role="status"></span></div>
+</form>
+<p class="hint">O frete é preenchido pela região e o valor pelo produto, mas você pode alterar. As vendas adicionadas ficam salvas neste navegador.</p>
+</section>
+
+<section class="panel">
+<h2>Principais observações</h2>
+<ul id="insights"></ul>
+</section>
+
+<section class="panel">
+<h2 id="tTitle">Pedidos</h2>
+<div class="scroll"><table>
+<thead><tr><th>ID</th><th>Região</th><th>UF</th><th>Produto</th><th>Data</th><th class="n">Qtd</th><th class="n">Valor unit.</th><th class="n">Frete</th><th class="n">Total</th><th></th></tr></thead>
+<tbody id="tbody"></tbody><tfoot id="tfoot"></tfoot>
+</table></div>
+</section>
+</main>
+
+<script>
+// [id, região, UF, produto, data, qtd, valor unit., frete]
+const RAW=[
+[1001,"Centro-Oeste","GO","Smartphone","17/11",4,8300,15],[1002,"Sudeste","SP","Pen drive 32GB","17/11",4,45,10],
+[1003,"Sul","RS","Smartphone","17/11",2,8300,15],[1004,"Sul","RS","Monitor OLED 33\"","18/11",1,1790,15],
+[1005,"Sudeste","SP","SmartTV 50\" 4K","18/11",1,2950,10],[1006,"Nordeste","BA","Smartphone Android","18/11",4,3200,20],
+[1007,"Sudeste","SP","SmartTV 50\" 4K","18/11",2,2950,10],[1008,"Sudeste","RJ","TV 48\" 4K","19/11",4,2840,10],
+[1009,"Nordeste","BA","SmartTV 50\" 4K","19/11",5,2950,20],[1010,"Sudeste","RJ","Smartphone Android","19/11",1,3200,10],
+[1011,"Sudeste","RJ","TV 60\" 4K","19/11",1,3470,10],[1012,"Centro-Oeste","GO","Monitor OLED 33\"","19/11",3,1790,15],
+[1013,"Sudeste","MG","TV 60\" 4K","20/11",5,3470,10],[1014,"Norte","AM","Smartphone Android","20/11",4,3200,25],
+[1015,"Sudeste","MG","Pen drive 32GB","20/11",5,45,10],[1016,"Sudeste","ES","Monitor OLED 33\"","20/11",4,1790,10],
+[1017,"Sudeste","ES","Pen drive 32GB","20/11",1,45,10],[1018,"Sul","PR","Smartphone","20/11",2,8300,15],
+[1019,"Sul","PR","Monitor OLED 33\"","20/11",5,1790,15],[1020,"Sul","PR","Smartphone","20/11",1,8300,15],
+[1021,"Sudeste","SP","Monitor OLED 33\"","21/11",5,1790,10],[1022,"Sudeste","SP","Smartphone Android","21/11",1,3200,10],
+[1023,"Sul","RS","TV 60\" 4K","21/11",2,3470,15],[1024,"Sudeste","SP","Monitor OLED 33\"","21/11",5,1790,10],
+[1025,"Sudeste","RJ","Monitor OLED 33\"","21/11",5,1790,10],[1026,"Sudeste","RJ","TV 60\" 4K","21/11",3,3470,10],
+[1027,"Sudeste","MG","Monitor OLED 33\"","21/11",3,1790,10],[1028,"Sudeste","MG","Smartphone","21/11",1,8300,10],
+[1029,"Nordeste","BA","Pen drive 32GB","21/11",3,45,20]
+].map(r=>({id:r[0],reg:r[1],uf:r[2],prod:r[3],dia:r[4],qtd:r[5],vu:r[6],fr:r[7],tot:r[5]*(r[6]+r[7])}));
+
+const brl=v=>v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+const GROUPS={reg:"Região",prod:"Produto",uf:"Estado",dia:"Dia"};
+const METS={tot:"Receita",qtd:"Unidades",ped:"Pedidos"};
+const TYPES={bar:"Barras",doughnut:"Rosca",line:"Linha"};
+const S={reg:"",prod:"",group:"reg",met:"tot",type:"bar",pick:null};
+const PAL=["#0f766e","#e09f3e","#3b5bdb","#c2410c","#7c3aed","#0891b2","#be185d","#65a30d","#64748b","#ca8a04"];
+let chart;
+
+const $=id=>document.getElementById(id);
+function fillSelect(el,key,label){
+  const vals=[...new Set(RAW.map(r=>r[key]))].sort();
+  el.innerHTML=`<option value="">${label}</option>`+vals.map(v=>`<option>${v.replace(/"/g,"&quot;")}</option>`).join("");
+  el.onchange=()=>{S[key]=el.value;S.pick=null;render()};
+}
+function seg(el,opts,key){
+  el.innerHTML=Object.entries(opts).map(([k,v])=>`<button type="button" data-k="${k}">${v}</button>`).join("");
+  el.onclick=e=>{const k=e.target.dataset.k;if(!k)return;S[key]=k;S.pick=null;render()};
+}
+function pressed(){
+  for(const [id,key] of [["gGroup","group"],["gMet","met"],["gType","type"]])
+    $(id).querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.k===S[key]));
+}
+const filtered=()=>RAW.filter(r=>(!S.reg||r.reg===S.reg)&&(!S.prod||r.prod===S.prod));
+
+function aggregate(rows){
+  const m=new Map();
+  rows.forEach(r=>{const k=r[S.group];const o=m.get(k)||{tot:0,qtd:0,ped:0};o.tot+=r.tot;o.qtd+=r.qtd;o.ped++;m.set(k,o)});
+  let arr=[...m.entries()];
+  arr.sort(S.group==="dia"?(a,b)=>dk(a[0]).localeCompare(dk(b[0])):(a,b)=>b[1][S.met]-a[1][S.met]);
+  return arr;
+}
+function renderKpis(rows){
+  const tot=rows.reduce((s,r)=>s+r.tot,0),q=rows.reduce((s,r)=>s+r.qtd,0),fr=rows.reduce((s,r)=>s+r.qtd*r.fr,0);
+  $("kpis").innerHTML=
+   `<div class="kpi main"><span>Receita total</span><b>${brl(tot)}</b></div>
+    <div class="kpi"><span>Pedidos</span><b>${rows.length}</b></div>
+    <div class="kpi"><span>Unidades vendidas</span><b>${q}</b></div>
+    <div class="kpi"><span>Ticket médio por pedido</span><b>${rows.length?brl(tot/rows.length):"–"}</b></div>
+    <div class="kpi"><span>Frete embutido</span><b>${brl(fr)}</b></div>`;
+}
+function renderChart(rows){
+  const agg=aggregate(rows),labels=agg.map(a=>a[0]),data=agg.map(a=>a[1][S.met]);
+  const fmt=v=>S.met==="tot"?brl(v):v.toLocaleString("pt-BR");
+  const style=getComputedStyle(document.documentElement);
+  const txt=style.getPropertyValue("--muted").trim(),grid=style.getPropertyValue("--line").trim();
+  if(chart)chart.destroy();
+  const round=S.type==="doughnut";
+  chart=new Chart($("chart"),{type:S.type,
+    data:{labels,datasets:[{label:METS[S.met],data,
+      backgroundColor:round?labels.map((_,i)=>PAL[i%PAL.length]):labels.map(l=>l===S.pick?PAL[1]:PAL[0]),
+      borderColor:S.type==="line"?PAL[0]:"transparent",tension:.25,pointRadius:5,fill:false}]},
+    options:{responsive:true,maintainAspectRatio:false,animation:{duration:250},
+      onClick:(e,els)=>{if(!els.length)return;const l=labels[els[0].index];S.pick=S.pick===l?null:l;render()},
+      plugins:{legend:{display:round,position:"bottom",labels:{color:txt}},
+        tooltip:{callbacks:{label:c=>` ${fmt(c.parsed.y??c.parsed)}`}}},
+      scales:round?{}:{x:{ticks:{color:txt},grid:{display:false}},
+        y:{beginAtZero:true,ticks:{color:txt,callback:v=>fmt(v)},grid:{color:grid}}}}});
+}
+function renderInsights(rows){
+  if(!rows.length){$("insights").innerHTML="<li>Nenhum pedido com esses filtros.</li>";return}
+  const by=(k)=>{const m={};rows.forEach(r=>m[r[k]]=(m[r[k]]||0)+r.tot);return Object.entries(m).sort((a,b)=>b[1]-a[1])};
+  const tot=rows.reduce((s,r)=>s+r.tot,0),reg=by("reg"),pr=by("prod"),dia=by("dia");
+  const big=[...rows].sort((a,b)=>b.tot-a.tot)[0];
+  const pct=v=>(v/tot*100).toFixed(1).replace(".",",")+"%";
+  $("insights").innerHTML=[
+   `<b>${reg[0][0]}</b> lidera em receita: ${brl(reg[0][1])} (${pct(reg[0][1])} do total).`,
+   `<b>${pr[0][0]}</b> é o produto que mais fatura: ${brl(pr[0][1])} (${pct(pr[0][1])}).`,
+   `Maior pedido: nº ${big.id}, ${big.qtd} × ${big.prod} em ${big.uf}, no valor de ${brl(big.tot)}.`,
+   `Melhor dia: ${[...dia].sort((a,b)=>b[1]-a[1])[0][0]}, com ${brl([...dia].sort((a,b)=>b[1]-a[1])[0][1])}.`
+  ].map(t=>`<li>${t}</li>`).join("");
+}
+function renderTable(rows){
+  const list=S.pick?rows.filter(r=>String(r[S.group])===S.pick):rows;
+  $("tTitle").textContent=S.pick?`Pedidos: ${GROUPS[S.group]} = ${S.pick}`:"Pedidos";
+  $("tbody").innerHTML=list.map(r=>`<tr><td>${r.id}</td><td>${r.reg}</td><td>${r.uf}</td><td>${r.prod}</td><td>${r.dia}/${r.ano||2024}</td><td class="n">${r.qtd}</td><td class="n">${brl(r.vu)}</td><td class="n">${brl(r.fr)}</td><td class="n">${brl(r.tot)}</td><td>${r.novo?`<button class="del" type="button" onclick="delNovo(${r.id})" aria-label="Remover venda ${r.id}">Remover</button>`:""}</td></tr>`).join("");
+  $("tfoot").innerHTML=`<tr><td colspan="5">Total (${list.length} pedidos)</td><td class="n">${list.reduce((s,r)=>s+r.qtd,0)}</td><td></td><td></td><td class="n">${brl(list.reduce((s,r)=>s+r.tot,0))}</td><td></td></tr>`;
+}
+function render(){
+  const rows=filtered();
+  pressed();renderKpis(rows);renderChart(rows);renderInsights(rows);renderTable(rows);
+}
+const dk=s=>s.split("/").reverse().join("");
+const FRETE={"Centro-Oeste":15,"Nordeste":20,"Norte":25,"Sul":15,"Sudeste":10};
+const PRICE={};RAW.forEach(r=>PRICE[r.prod]=r.vu);
+const KEY="vendas-novas";
+function saveNovos(){try{localStorage.setItem(KEY,JSON.stringify(RAW.filter(r=>r.novo)))}catch(e){}}
+try{const st=JSON.parse(localStorage.getItem(KEY)||"[]");if(Array.isArray(st))st.forEach(r=>{if(r&&r.id&&!RAW.some(x=>x.id===r.id))RAW.push(r)})}catch(e){}
+function refreshSelects(){
+  fillSelect($("fReg"),"reg","Todas as regiões");fillSelect($("fProd"),"prod","Todos os produtos");
+  $("fReg").value=S.reg;$("fProd").value=S.prod;
+}
+$("nReg").innerHTML='<option value="">Selecione</option>'+Object.keys(FRETE).map(k=>`<option>${k}</option>`).join("");
+$("prodList").innerHTML=Object.keys(PRICE).map(p=>`<option value="${p.replace(/"/g,"&quot;")}">`).join("");
+function nTotal(){
+  const t=(+$("nQtd").value||0)*((+$("nVu").value||0)+(+$("nFr").value||0));
+  $("nTot").textContent="Total: "+brl(t);
+}
+$("nReg").onchange=()=>{if(FRETE[$("nReg").value]!=null)$("nFr").value=FRETE[$("nReg").value];nTotal()};
+$("nProd").oninput=()=>{const p=PRICE[$("nProd").value];if(p!=null)$("nVu").value=p;nTotal()};
+["nQtd","nVu","nFr"].forEach(id=>$(id).oninput=nTotal);
+$("nForm").onsubmit=e=>{
+  e.preventDefault();
+  const [y,m,d]=$("nData").value.split("-");
+  const r={id:Math.max(...RAW.map(x=>x.id))+1,reg:$("nReg").value,uf:$("nUf").value.trim().toUpperCase(),
+    prod:$("nProd").value.trim(),dia:d+"/"+m,ano:+y,qtd:+$("nQtd").value,vu:+$("nVu").value,fr:+$("nFr").value,novo:true};
+  r.tot=r.qtd*(r.vu+r.fr);
+  RAW.push(r);PRICE[r.prod]=r.vu;saveNovos();
+  $("prodList").innerHTML=Object.keys(PRICE).map(p=>`<option value="${p.replace(/"/g,"&quot;")}">`).join("");
+  refreshSelects();render();
+  $("nMsg").textContent=`Venda ${r.id} adicionada: ${brl(r.tot)}.`;
+  $("nProd").value="";$("nVu").value="";$("nQtd").value=1;nTotal();
+};
+window.delNovo=id=>{const i=RAW.findIndex(r=>r.id===id&&r.novo);if(i<0)return;RAW.splice(i,1);saveNovos();S.pick=null;refreshSelects();render();$("nMsg").textContent=`Venda ${id} removida.`};
+fillSelect($("fReg"),"reg","Todas as regiões");
+fillSelect($("fProd"),"prod","Todos os produtos");
+seg($("gGroup"),GROUPS,"group");seg($("gMet"),METS,"met");seg($("gType"),TYPES,"type");
+matchMedia("(prefers-color-scheme:dark)").addEventListener("change",render);
+render();
+</script>
+</body>
+</html>
